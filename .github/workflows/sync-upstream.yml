@@ -18,25 +18,22 @@ jobs:
     runs-on: ubuntu-latest
     if: github.repository == 'charfeng1/codex'
     steps:
-      - name: Checkout fork
-        uses: actions/checkout@v6
-        with:
-          ref: main
-          fetch-depth: 0
-
       - name: Merge upstream main
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
 
+          git init --initial-branch=main .
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git remote add upstream https://github.com/openai/codex.git || \
-            git remote set-url upstream https://github.com/openai/codex.git
+          git remote add origin "https://x-access-token:${GITHUB_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          git remote add upstream https://github.com/openai/codex.git
 
-          git fetch origin main
-          git fetch upstream main
+          git fetch --no-tags origin +refs/heads/main:refs/remotes/origin/main
+          git fetch --no-tags upstream +refs/heads/main:refs/remotes/upstream/main
           git checkout -B main origin/main
 
           if git merge-base --is-ancestor upstream/main HEAD; then
@@ -45,4 +42,4 @@ jobs:
           fi
 
           git merge --no-edit -m "Sync upstream main [skip ci]" upstream/main
-          git push origin main
+          git push origin HEAD:main
